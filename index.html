@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            transition: background 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body.dark {
+            background: #000000;
+        }
+
+        body.light {
+            background: #f5f5f7;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+        }
+
+        .settings-icon {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .dark .settings-icon {
+            background: #1c1c1e;
+            color: #ffffff;
+        }
+
+        .light .settings-icon {
+            background: #e5e5ea;
+            color: #000000;
+        }
+
+        .settings-icon:hover {
+            transform: rotate(90deg);
+        }
+
+        .settings-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .dark .modal-content {
+            background: #1c1c1e;
+            color: #ffffff;
+        }
+
+        .light .modal-content {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .dark .close-btn {
+            background: #2a2a2c;
+            color: #ffffff;
+        }
+
+        .light .close-btn {
+            background: #e5e5ea;
+            color: #000000;
+        }
+
+        .setting-item {
+            padding: 15px 0;
+            border-bottom: 1px solid;
+        }
+
+        .dark .setting-item {
+            border-color: #2a2a2c;
+        }
+
+        .light .setting-item {
+            border-color: #e5e5ea;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-item h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .setting-item p {
+            font-size: 14px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+
+        .theme-toggle {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .theme-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dark .theme-btn {
+            background: #2a2a2c;
+            border-color: #3a3a3c;
+            color: #ffffff;
+        }
+
+        .light .theme-btn {
+            background: #f5f5f7;
+            border-color: #d1d1d6;
+            color: #000000;
+        }
+
+        .theme-btn.active {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            border-color: #10b981;
+            color: #000000;
+        }
+
+        .display {
+            text-align: center;
+            margin: 200px 0 100px 0;
+            padding: 40px 20px;
+        }
+
+        .time {
+            font-size: 72px;
+            font-weight: 300;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .dark .time {
+            color: #ffffff;
+        }
+
+        .light .time {
+            color: #000000;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 40px;
+            justify-content: center;
+        }
+
+        button {
+            flex: 1;
+            max-width: 120px;
+            padding: 18px 24px;
+            border: 1px solid;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .dark button {
+            background: #1c1c1e;
+            border-color: #2a2a2c;
+            color: #ffffff;
+        }
+
+        .light button {
+            background: #ffffff;
+            border-color: #d1d1d6;
+            color: #000000;
+        }
+
+        #actionBtn {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            border: none;
+            color: #000000;
+            font-weight: 600;
+        }
+
+        #actionBtn:hover {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        }
+
+        #actionBtn.pause {
+            background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+            color: #000000;
+        }
+
+        #actionBtn.pause:hover {
+            background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
+        }
+
+        .dark #lapBtn {
+            color: #60a5fa;
+        }
+
+        .light #lapBtn {
+            color: #2563eb;
+        }
+
+        .dark #lapBtn:hover:not(:disabled) {
+            background: #2a2a2c;
+            border-color: #60a5fa;
+        }
+
+        .light #lapBtn:hover:not(:disabled) {
+            background: #e5e5ea;
+            border-color: #2563eb;
+        }
+
+        .dark #resetBtn {
+            color: #f87171;
+        }
+
+        .light #resetBtn {
+            color: #dc2626;
+        }
+
+        .dark #resetBtn:hover {
+            background: #2a2a2c;
+            border-color: #f87171;
+        }
+
+        .light #resetBtn:hover {
+            background: #e5e5ea;
+            border-color: #dc2626;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .laps-container {
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 0 10px;
+        }
+
+        .laps-header {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-left: 5px;
+        }
+
+        .dark .laps-header {
+            color: #8e8e93;
+        }
+
+        .light .laps-header {
+            color: #6e6e73;
+        }
+
+        .lap-item {
+            padding: 18px 20px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px;
+            border: 1px solid;
+        }
+
+        .dark .lap-item {
+            background: #1c1c1e;
+            border-color: #2a2a2c;
+        }
+
+        .light .lap-item {
+            background: #ffffff;
+            border-color: #d1d1d6;
+        }
+
+        .lap-number {
+            font-weight: 400;
+            font-size: 16px;
+        }
+
+        .dark .lap-number {
+            color: #ffffff;
+        }
+
+        .light .lap-number {
+            color: #000000;
+        }
+
+        .lap-time {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .dark .lap-time {
+            color: #ffffff;
+        }
+
+        .light .lap-time {
+            color: #000000;
+        }
+
+        .no-laps {
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 15px;
+        }
+
+        .dark .no-laps {
+            color: #3a3a3c;
+        }
+
+        .light .no-laps {
+            color: #6e6e73;
+        }
+
+        .laps-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .laps-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .dark .laps-container::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 10px;
+        }
+
+        .light .laps-container::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .dark .modal-content::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 10px;
+        }
+
+        .light .modal-content::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 400px) {
+            .time {
+                font-size: 64px;
+            }
+            
+            button {
+                padding: 16px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body class="dark">
+    <div class="container">
+        <div class="settings-icon" onclick="openSettings()">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+            </svg>
+        </div>
+
+        <div class="display">
+            <div class="time" id="display">00:00:00</div>
+        </div>
+        
+        <div class="controls">
+            <button id="lapBtn" disabled>Lap</button>
+            <button id="actionBtn">Start</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        
+        <div class="laps-container">
+            <div class="laps-header">Laps</div>
+            <div id="laps">
+                <div class="no-laps">No laps recorded</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">×</button>
+            </div>
+
+            <div class="setting-item">
+                <h3>Theme</h3>
+                <p>Choose your preferred theme</p>
+                <div class="theme-toggle">
+                    <button class="theme-btn active" id="darkThemeBtn" onclick="setTheme('dark')">Dark</button>
+                    <button class="theme-btn" id="lightThemeBtn" onclick="setTheme('light')">Light</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <h3>About This App</h3>
+                <p>Professional Stopwatch is a modern, feature-rich timing application designed for precision and simplicity. Track your time with accuracy down to the second, record unlimited laps, and never lose your progress with auto-save functionality. Perfect for workouts, studying, cooking, or any activity requiring precise time tracking.</p>
+            </div>
+
+            <div class="setting-item">
+                <h3>Features</h3>
+                <p>• Accurate time tracking (HH:MM:SS format)<br>
+                • Unlimited lap recording<br>
+                • Auto-save functionality<br>
+                • Dark and Light themes<br>
+                • Modern, professional design<br>
+                • Optimized for mobile devices</p>
+            </div>
+
+            <div class="setting-item">
+                <h3>Developer</h3>
+                <p>Created with passion by SALMAN IRSHAD focused on building clean, functional, and beautiful applications. This stopwatch was designed to provide the simplicity and improve focus without loosing any functionality.</p>
+            </div>
+
+            <div class="setting-item">
+                <h3>Version</h3>
+                <p>Version 1.0.0<br>Last Updated: December 2025</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        let lapCounter = 0;
+        let laps = [];
+
+        const display = document.getElementById('display');
+        const actionBtn = document.getElementById('actionBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const lapBtn = document.getElementById('lapBtn');
+        const lapsContainer = document.getElementById('laps');
+        const settingsModal = document.getElementById('settingsModal');
+
+        function loadState() {
+            const savedState = localStorage.getItem('stopwatchState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                elapsedTime = state.elapsedTime || 0;
+                laps = state.laps || [];
+                lapCounter = state.lapCounter || 0;
+                
+                if (state.isRunning) {
+                    startTime = Date.now() - elapsedTime;
+                    start();
+                } else {
+                    updateDisplay();
+                }
+                
+                renderLaps();
+            }
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
+        function saveState() {
+            const state = {
+                elapsedTime: elapsedTime,
+                isRunning: isRunning,
+                laps: laps,
+                lapCounter: lapCounter
+            };
+            localStorage.setItem('stopwatchState', JSON.stringify(state));
+        }
+
+        function formatTime(ms) {
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            display.textContent = formatTime(elapsedTime);
+        }
+
+        function start() {
+            if (!isRunning) {
+                startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateDisplay();
+                    saveState();
+                }, 100);
+                isRunning = true;
+                
+                actionBtn.textContent = 'Pause';
+                actionBtn.classList.add('pause');
+                lapBtn.disabled = false;
+                
+                saveState();
+            }
+        }
+
+        function pause() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                
+                actionBtn.textContent = 'Start';
+                actionBtn.classList.remove('pause');
+                
+                saveState();
+            }
+        }
+
+        function reset() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startTime = 0;
+            elapsedTime = 0;
+            lapCounter = 0;
+            laps = [];
+            
+            updateDisplay();
+            renderLaps();
+            
+            actionBtn.textContent = 'Start';
+            actionBtn.classList.remove('pause');
+            lapBtn.disabled = true;
+            
+            saveState();
+        }
+
+        function addLap() {
+            if (isRunning) {
+                lapCounter++;
+                laps.unshift({
+                    number: lapCounter,
+                    time: elapsedTime
+                });
+                renderLaps();
+                saveState();
+            }
+        }
+
+        function renderLaps() {
+            if (laps.length === 0) {
+                lapsContainer.innerHTML = '<div class="no-laps">No laps recorded</div>';
+            } else {
+                lapsContainer.innerHTML = laps.map(lap => `
+                    <div class="lap-item">
+                        <span class="lap-number">Lap ${lap.number}</span>
+                        <span class="lap-time">${formatTime(lap.time)}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function openSettings() {
+            settingsModal.classList.add('active');
+        }
+
+        function closeSettings() {
+            settingsModal.classList.remove('active');
+        }
+
+        function setTheme(theme) {
+            document.body.className = theme;
+            localStorage.setItem('theme', theme);
+            
+            document.getElementById('darkThemeBtn').classList.remove('active');
+            document.getElementById('lightThemeBtn').classList.remove('active');
+            
+            if (theme === 'dark') {
+                document.getElementById('darkThemeBtn').classList.add('active');
+            } else {
+                document.getElementById('lightThemeBtn').classList.add('active');
+            }
+        }
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeSettings();
+            }
+        });
+
+        actionBtn.addEventListener('click', () => {
+            if (isRunning) {
+                pause();
+            } else {
+                start();
+            }
+        });
+        
+        resetBtn.addEventListener('click', reset);
+        lapBtn.addEventListener('click', addLap);
+
+        loadState();
+        window.addEventListener('beforeunload', saveState);
+    </script>
+</body>
+</html>
